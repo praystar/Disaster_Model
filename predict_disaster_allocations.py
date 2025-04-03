@@ -2,14 +2,12 @@ import pandas as pd
 from relief_supply_manager import ReliefSupplyManager
 import json
 
-def predict_disaster_allocations():
+def predict_disaster_allocations(unique_disasters_df):
     print("Predicting Relief Allocations for Unique Disasters")
     print("=" * 80)
     
     try:
-        # Load unique disasters data
-        unique_disasters_df = pd.read_csv('unique_disasters_combined.csv')
-        print(f"Loaded {len(unique_disasters_df)} unique disasters")
+        print(f"Processing {len(unique_disasters_df)} unique disasters")
         
         # Print available columns for debugging
         print("\nAvailable columns in the dataset:")
@@ -74,10 +72,8 @@ def predict_disaster_allocations():
                 print(f"  {supply_type}: {quantity:.2f} units")
         
         print("\nDetailed report saved to 'disaster_allocations_report.json'")
+        return allocations
         
-    except FileNotFoundError:
-        print("Error: Could not find 'unique_disasters_combined.csv'")
-        print("Please make sure you have run the disaster analysis pipeline first")
     except Exception as e:
         print(f"An error occurred: {str(e)}")
         print("\nDebugging Information:")
@@ -85,6 +81,13 @@ def predict_disaster_allocations():
         import traceback
         print("Traceback:")
         print(traceback.format_exc())
+        return None
 
 if __name__ == "__main__":
-    predict_disaster_allocations() 
+    # For standalone execution, read from file
+    try:
+        unique_disasters_df = pd.read_csv('unique_disasters_combined.csv')
+        predict_disaster_allocations(unique_disasters_df)
+    except FileNotFoundError:
+        print("Error: Could not find 'unique_disasters_combined.csv'")
+        print("Please make sure you have run the disaster analysis pipeline first") 
