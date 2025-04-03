@@ -1,6 +1,7 @@
 {
+    "timestamp": "2025-04-04 02:52:42",
     "buffer_percentage": 20,
-    "total_disasters": 58,
+    "total_disasters": 59,
     "allocations": {
         "hurricane": {
             "location": "BI",

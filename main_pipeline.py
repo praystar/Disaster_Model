@@ -2,6 +2,7 @@ import time
 import schedule
 from datetime import datetime
 import os
+import json
 from disaster_scraper import DisasterNewsScraper
 from text_processor import TextProcessor
 from disaster_classifier import DisasterClassifier
@@ -83,6 +84,31 @@ def run_pipeline():
         
         # Allocate supplies using ReliefSupplyManager
         allocations = supply_manager.allocate_supplies(disaster_list)
+        
+        # Create detailed report
+        report = {
+            'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'buffer_percentage': supply_manager.buffer_percentage,
+            'total_disasters': len(disaster_list),
+            'allocations': {}
+        }
+        
+        # Add allocation details to report
+        for disaster_type, disaster_allocations in allocations.items():
+            # Find the corresponding disaster data
+            disaster_data = next((d for d in disaster_list if d['disaster_type'] == disaster_type), None)
+            if disaster_data:
+                report['allocations'][disaster_type] = {
+                    'location': disaster_data['location'],
+                    'severity': disaster_data['severity'],
+                    'supplies': disaster_allocations
+                }
+        
+        # Save report to JSON file
+        with open('disaster_allocations_report.json', 'w') as f:
+            json.dump(report, f, indent=4)
+        
+        # Print allocation report
         supply_manager.print_allocation_report(allocations)
         print("Relief allocation completed successfully\n")
         
