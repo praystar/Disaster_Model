@@ -1,0 +1,46 @@
+{
+    "buffer_percentage": 20,
+    "total_disasters": 71,
+    "allocations": {
+        "hurricane": {
+            "location": "BI",
+            "severity": "high",
+            "supplies": {
+                "food": 48.0,
+                "water": 48.0,
+                "medicine": 3.2,
+                "shelter": 16.0
+            }
+        },
+        "earthquake": {
+            "location": "Thailand",
+            "severity": "high",
+            "supplies": {
+                "food": 48.0,
+                "water": 48.0,
+                "medicine": 3.2,
+                "shelter": 16.0
+            }
+        },
+        "flood": {
+            "location": "US",
+            "severity": "high",
+            "supplies": {
+                "food": 48.0,
+                "water": 48.0,
+                "medicine": 3.2,
+                "shelter": 16.0
+            }
+        },
+        "wildfire": {
+            "location": "Arizona",
+            "severity": "unknown",
+            "supplies": {
+                "food": 48.0,
+                "water": 48.0,
+                "medicine": 3.2,
+                "shelter": 16.0
+            }
+        }
+    }
+}

@@ -25,26 +25,35 @@ class ReliefAllocator:
         Encode categorical features using LabelEncoder
         """
         encoded_df = df.copy()
-        for column in ['disaster_type', 'severity', 'urban_rural', 'accessibility']:
+        categorical_columns = ['disaster_type', 'severity', 'urban_rural', 'infrastructure_damage', 'accessibility']
+        
+        for column in categorical_columns:
             if column not in self.label_encoders:
                 self.label_encoders[column] = LabelEncoder()
-            encoded_df[column] = self.label_encoders[column].fit_transform(df[column])
+            # Convert to string type before encoding
+            encoded_df[column] = encoded_df[column].astype(str)
+            encoded_df[column] = self.label_encoders[column].fit_transform(encoded_df[column])
+        
         return encoded_df
     
     def _prepare_features(self, disaster_data):
         """
         Prepare features for the model
         """
-        # Create a DataFrame with the required features
-        features = pd.DataFrame({
-            'disaster_type': disaster_data['disaster_type'],
-            'severity': disaster_data['severity'],
-            'population_density': disaster_data.get('population_density', 0),
-            'urban_rural': disaster_data.get('urban_rural', 'unknown'),
-            'infrastructure_damage': disaster_data.get('infrastructure_damage', 'unknown'),
-            'accessibility': disaster_data.get('accessibility', 'unknown'),
-            'time_since_disaster': disaster_data.get('time_since_disaster', 0)
-        })
+        if isinstance(disaster_data, pd.DataFrame):
+            # If input is a DataFrame, use it directly
+            features = disaster_data[self.feature_columns].copy()
+        else:
+            # If input is a dictionary, create a DataFrame
+            features = pd.DataFrame({
+                'disaster_type': [disaster_data['disaster_type']],
+                'severity': [disaster_data['severity']],
+                'population_density': [disaster_data.get('population_density', 0)],
+                'urban_rural': [disaster_data.get('urban_rural', 'unknown')],
+                'infrastructure_damage': [disaster_data.get('infrastructure_damage', 'unknown')],
+                'accessibility': [disaster_data.get('accessibility', 'unknown')],
+                'time_since_disaster': [disaster_data.get('time_since_disaster', 0)]
+            })
         
         # Encode categorical features
         return self._encode_categorical_features(features)
@@ -55,10 +64,12 @@ class ReliefAllocator:
         """
         supply_types = ['food', 'water', 'medicine', 'shelter']
         
+        # Prepare features for all supply types at once
+        X = self._prepare_features(training_data)
+        
         for supply_type in supply_types:
-            # Prepare features
-            X = self._prepare_features(training_data)
-            y = training_data[f'{supply_type}_need']
+            # Get target variable
+            y = training_data[f'{supply_type}_allocation_percent']
             
             # Split data
             X_train, X_test, y_train, y_test = train_test_split(
@@ -74,10 +85,10 @@ class ReliefAllocator:
                 random_state=42
             )
             
+            # Fit the model with validation set
             model.fit(
                 X_train, y_train,
                 eval_set=[(X_test, y_test)],
-                early_stopping_rounds=10,
                 verbose=False
             )
             
@@ -96,15 +107,25 @@ class ReliefAllocator:
     
     def predict_needs(self, disaster_data):
         """
-        Predict relief supply needs for a given disaster
+        Predict relief supply allocation percentages for a given disaster
+        Returns a dictionary with allocation percentages for each supply type
         """
         # Prepare features
         X = self._prepare_features(disaster_data)
         
         # Make predictions for each supply type
         predictions = {}
+        total_percent = 0
+        
+        # First pass: get raw predictions
+        raw_predictions = {}
         for supply_type, model in self.supply_models.items():
-            predictions[supply_type] = model.predict(X)[0]
+            raw_predictions[supply_type] = model.predict(X)[0]
+            total_percent += raw_predictions[supply_type]
+        
+        # Second pass: normalize to ensure total is 100%
+        for supply_type, raw_pred in raw_predictions.items():
+            predictions[supply_type] = (raw_pred / total_percent) * 100
         
         return predictions
     
@@ -137,7 +158,7 @@ class ReliefAllocator:
             instance.supply_models[supply_type] = model
         
         # Load encoders
-        for column in ['disaster_type', 'severity', 'urban_rural', 'accessibility']:
+        for column in ['disaster_type', 'severity', 'urban_rural', 'infrastructure_damage', 'accessibility']:
             instance.label_encoders[column] = joblib.load(f'{directory}/{column}_encoder.joblib')
         
         return instance 
