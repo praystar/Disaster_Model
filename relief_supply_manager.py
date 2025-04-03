@@ -160,11 +160,36 @@ class ReliefSupplyManager:
             for supply_type, percentage in adjusted_allocations.items():
                 available = available_supplies[supply_type]
                 # Apply priority ratio to the total available supplies
-                disaster_allocations[supply_type] = (available * priority_ratio) * (percentage / 100)
+                disaster_allocations[supply_type] = round((available * priority_ratio) * (percentage / 100), 2)
             
-            allocations[disaster['disaster_type']] = disaster_allocations
+            # Format the allocation for the report
+            country = disaster.get('location', 'Unknown')
+            if country not in allocations:
+                allocations[country] = {
+                    'total_disasters': 0,
+                    'disasters': {}
+                }
+            
+            allocations[country]['total_disasters'] += 1
+            allocations[country]['disasters'][disaster_type] = {
+                'title': disaster.get('title', f"{disaster_type.capitalize()} in {country}"),
+                'severity': severity,
+                'supplies': disaster_allocations
+            }
         
         return allocations
+    
+    def format_report(self, allocations):
+        """
+        Format the allocations into the desired report structure
+        """
+        report = {
+            'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'buffer_percentage': self.buffer_percentage,
+            'total_disasters': sum(country['total_disasters'] for country in allocations.values()),
+            'countries': allocations
+        }
+        return report
     
     def print_allocation_report(self, allocations):
         """
@@ -185,12 +210,18 @@ class ReliefSupplyManager:
         for supply_type, quantity in available_supplies.items():
             print(f"  {supply_type}: {quantity:.2f} units")
         
-        # Print allocations
-        print("\nAllocations by Disaster:")
-        for disaster_type, disaster_allocations in allocations.items():
-            print(f"\n{disaster_type.upper()}:")
-            for supply_type, quantity in disaster_allocations.items():
-                print(f"  {supply_type}: {quantity:.2f} units")
+        # Print allocations by country
+        print("\nAllocations by Country:")
+        for country, country_data in allocations.items():
+            print(f"\n{country}:")
+            print(f"  Total Disasters: {country_data['total_disasters']}")
+            for disaster_type, disaster_data in country_data['disasters'].items():
+                print(f"\n  {disaster_type.upper()}:")
+                print(f"    Title: {disaster_data['title']}")
+                print(f"    Severity: {disaster_data['severity']}")
+                print("    Supplies:")
+                for supply_type, quantity in disaster_data['supplies'].items():
+                    print(f"      {supply_type}: {quantity:.2f} units")
         
         print("\n" + "=" * 80)
 

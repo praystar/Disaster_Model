@@ -45,6 +45,7 @@ def run_pipeline():
             locations = processor.extract_location(full_text)
             
             processed_data.append({
+                'title': article['title'],
                 'text': processed_text,
                 'disaster_type': disaster_type,
                 'severity': severity,
@@ -78,31 +79,16 @@ def run_pipeline():
                 'infrastructure_damage': 'moderate',  # Default value
                 'accessibility': 'moderate',  # Default value
                 'time_since_disaster': 1,  # Default value
-                'location': disaster.get('location', 'Unknown Location')
+                'location': disaster.get('location', 'Unknown Location'),
+                'title': disaster.get('title', '')
             }
             disaster_list.append(disaster_data)
         
         # Allocate supplies using ReliefSupplyManager
         allocations = supply_manager.allocate_supplies(disaster_list)
         
-        # Create detailed report
-        report = {
-            'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            'buffer_percentage': supply_manager.buffer_percentage,
-            'total_disasters': len(disaster_list),
-            'allocations': {}
-        }
-        
-        # Add allocation details to report
-        for disaster_type, disaster_allocations in allocations.items():
-            # Find the corresponding disaster data
-            disaster_data = next((d for d in disaster_list if d['disaster_type'] == disaster_type), None)
-            if disaster_data:
-                report['allocations'][disaster_type] = {
-                    'location': disaster_data['location'],
-                    'severity': disaster_data['severity'],
-                    'supplies': disaster_allocations
-                }
+        # Create detailed report organized by country
+        report = supply_manager.format_report(allocations)
         
         # Save report to JSON file
         with open('disaster_allocations_report.json', 'w') as f:
