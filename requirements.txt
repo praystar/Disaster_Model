@@ -5,4 +5,6 @@ nltk
 spacy
 scikit-learn
 python-dotenv
-requests 
+requests
+geopy
+xgboost 
