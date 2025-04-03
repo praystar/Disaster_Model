@@ -99,12 +99,31 @@ class ReliefSupplyManager:
         # Calculate total priority score
         total_priority = sum(d['priority_score'] for d in top_disasters)
         
-        # Default percentage allocations based on disaster type
-        default_allocations = {
-            'food': 30,
-            'water': 30,
-            'medicine': 20,
-            'shelter': 20
+        # Base percentage allocations based on disaster type
+        disaster_type_allocations = {
+            'earthquake': {'food': 25, 'water': 25, 'medicine': 30, 'shelter': 20},
+            'flood': {'food': 20, 'water': 40, 'medicine': 20, 'shelter': 20},
+            'hurricane': {'food': 30, 'water': 30, 'medicine': 20, 'shelter': 20},
+            'wildfire': {'food': 25, 'water': 35, 'medicine': 20, 'shelter': 20},
+            'tornado': {'food': 30, 'water': 25, 'medicine': 25, 'shelter': 20},
+            'default': {'food': 30, 'water': 30, 'medicine': 20, 'shelter': 20}
+        }
+        
+        # Severity multipliers for different supply types
+        severity_multipliers = {
+            'low': {'food': 0.8, 'water': 0.8, 'medicine': 0.7, 'shelter': 0.7},
+            'medium': {'food': 1.0, 'water': 1.0, 'medicine': 1.0, 'shelter': 1.0},
+            'high': {'food': 1.2, 'water': 1.2, 'medicine': 1.3, 'shelter': 1.3},
+            'unknown': {'food': 1.0, 'water': 1.0, 'medicine': 1.0, 'shelter': 1.0}
+        }
+        
+        # Damage multipliers for different supply types
+        damage_multipliers = {
+            'none': {'food': 0.7, 'water': 0.7, 'medicine': 0.6, 'shelter': 0.6},
+            'light': {'food': 0.8, 'water': 0.8, 'medicine': 0.8, 'shelter': 0.8},
+            'moderate': {'food': 1.0, 'water': 1.0, 'medicine': 1.0, 'shelter': 1.0},
+            'severe': {'food': 1.3, 'water': 1.3, 'medicine': 1.4, 'shelter': 1.4},
+            'unknown': {'food': 1.0, 'water': 1.0, 'medicine': 1.0, 'shelter': 1.0}
         }
         
         # Allocate supplies based on priority
@@ -113,19 +132,35 @@ class ReliefSupplyManager:
             disaster = disaster_data['disaster']
             priority_ratio = disaster_data['priority_score'] / total_priority
             
-            # Try to get percentage allocations from the model
-            try:
-                percentage_allocations = self.allocator.predict_needs(disaster)
-                if not percentage_allocations or not isinstance(percentage_allocations, dict):
-                    percentage_allocations = default_allocations
-            except Exception:
-                percentage_allocations = default_allocations
+            # Get disaster-specific base allocations
+            disaster_type = disaster.get('disaster_type', 'default').lower()
+            base_allocations = disaster_type_allocations.get(disaster_type, disaster_type_allocations['default'])
+            
+            # Get severity and damage multipliers
+            severity = disaster.get('severity', 'unknown')
+            damage = disaster.get('infrastructure_damage', 'unknown')
+            severity_mult = severity_multipliers.get(severity, severity_multipliers['unknown'])
+            damage_mult = damage_multipliers.get(damage, damage_multipliers['unknown'])
+            
+            # Calculate adjusted percentages based on severity and damage
+            adjusted_allocations = {}
+            for supply_type, base_percentage in base_allocations.items():
+                # Apply both severity and damage multipliers
+                adjusted_percentage = base_percentage * severity_mult[supply_type] * damage_mult[supply_type]
+                adjusted_allocations[supply_type] = adjusted_percentage
+            
+            # Normalize percentages to ensure they sum to 100
+            total_percentage = sum(adjusted_allocations.values())
+            if total_percentage > 0:
+                for supply_type in adjusted_allocations:
+                    adjusted_allocations[supply_type] = (adjusted_allocations[supply_type] / total_percentage) * 100
             
             # Calculate actual quantities based on available supplies and priority
             disaster_allocations = {}
-            for supply_type, percentage in percentage_allocations.items():
+            for supply_type, percentage in adjusted_allocations.items():
                 available = available_supplies[supply_type]
-                disaster_allocations[supply_type] = available * (percentage / 100) * priority_ratio
+                # Apply priority ratio to the total available supplies
+                disaster_allocations[supply_type] = (available * priority_ratio) * (percentage / 100)
             
             allocations[disaster['disaster_type']] = disaster_allocations
         

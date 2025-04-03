@@ -6,40 +6,40 @@
             "location": "BI",
             "severity": "high",
             "supplies": {
-                "food": 48.0,
-                "water": 48.0,
-                "medicine": 3.2,
-                "shelter": 16.0
+                "food": 46.45161290322581,
+                "water": 46.45161290322581,
+                "medicine": 3.3548387096774195,
+                "shelter": 16.774193548387096
             }
         },
         "earthquake": {
             "location": "Thailand",
             "severity": "high",
             "supplies": {
-                "food": 48.0,
-                "water": 48.0,
-                "medicine": 3.2,
-                "shelter": 16.0
+                "food": 38.4,
+                "water": 38.4,
+                "medicine": 4.992,
+                "shelter": 16.64
             }
         },
         "flood": {
             "location": "US",
             "severity": "high",
             "supplies": {
-                "food": 48.0,
-                "water": 48.0,
-                "medicine": 3.2,
-                "shelter": 16.0
+                "food": 30.967741935483872,
+                "water": 61.935483870967744,
+                "medicine": 3.3548387096774195,
+                "shelter": 16.774193548387096
             }
         },
         "wildfire": {
             "location": "Arizona",
             "severity": "unknown",
             "supplies": {
-                "food": 48.0,
-                "water": 48.0,
-                "medicine": 3.2,
-                "shelter": 16.0
+                "food": 38.70967741935484,
+                "water": 54.19354838709677,
+                "medicine": 3.3548387096774195,
+                "shelter": 16.774193548387096
             }
         }
     }
