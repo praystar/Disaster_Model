@@ -1,0 +1,8 @@
+newsapi-python
+beautifulsoup4
+pandas
+nltk
+spacy
+scikit-learn
+python-dotenv
+requests 
